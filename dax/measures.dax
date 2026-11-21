@@ -1,0 +1,44 @@
+// ============================================================
+// Hospital Analytics Dashboard – DAX
+// All measures live in the _Measures table.
+// ============================================================
+
+// ---------- Calculated table: DateTable ----------
+// Modeling > New table, then Mark as date table (Date column).
+// Sort "Month" by "Month No" and "Month Year" by "YearMonth".
+DateTable =
+ADDCOLUMNS (
+    CALENDAR ( DATE ( 2023, 1, 1 ), DATE ( 2025, 12, 31 ) ),
+    "Year", YEAR ( [Date] ),
+    "Month No", MONTH ( [Date] ),
+    "Month", FORMAT ( [Date], "mmm" ),
+    "Month Year", FORMAT ( [Date], "mmm yyyy" ),
+    "YearMonth", YEAR ( [Date] ) * 100 + MONTH ( [Date] ),
+    "Quarter", "Q" & QUARTER ( [Date] )
+)
+
+// ---------- Core KPIs ----------
+Total Admissions = COUNTROWS ( Admissions )
+
+Total Patients = DISTINCTCOUNT ( Admissions[PatientID] )
+
+// Counts doctors on the fact table so the KPI responds to slicers
+// (COUNTROWS(Doctors) would always return 109).
+Total Doctors = DISTINCTCOUNT ( Admissions[DoctorID] )
+
+Total Hospitals = COUNTROWS ( Hospitals )
+
+Total Treatment Cost = SUM ( Admissions[TreatmentCost] )
+
+Avg Treatment Cost = DIVIDE ( [Total Treatment Cost], [Total Admissions] )
+
+Avg Length of Stay = AVERAGE ( Admissions[LengthOfStay] )
+
+// Blank scores are left blank (not 0) so they don't drag the average down.
+Avg Satisfaction = AVERAGE ( Admissions[SatisfactionScore] )
+
+// ---------- Rates ----------
+Readmissions =
+CALCULATE ( [Total Admissions], Admissions[Readmitted30Days] = "Yes" )
+
+Readmission Rate % = DIVIDE ( [Readmissions], [Total Admissions] )
